@@ -1,0 +1,28 @@
+{
+  "name": "genetic-algorithm",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Genetic Algorithm (GA) — Tecky Open Class",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@gitlab.com:tecky.io/tecky-devs/open-class/genetic-algorithm.git"
+  },
+  "keywords": [
+    "genetic algorithm",
+    "demo",
+    "education"
+  ],
+  "author": "Beeno Tung",
+  "license": "BSD-2-Clause",
+  "devDependencies": {
+    "@types/node": "^14.14.20",
+    "typescript": "^4.1.3"
+  },
+  "dependencies": {
+    "@beenotung/tslib": "^16.41.0"
+  }
+}
