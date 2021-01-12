@@ -29,6 +29,7 @@ ZeroMe/ZeroMail: beenotung@zeroid.bit
 - 群體智能 (Swarm Intelligent)
     - 蟻群演算法 (Ant Colony Optimization)
     - 粒子群最佳化算法 (Particle Swarm Optimization)
+
 ![人工神經網絡的數學模型 [Source]](https://www.researchgate.net/profile/Sandra_Vieira5/publication/312205163/figure/fig1/AS:453658144972800@1485171938968/a-The-building-block-of-deep-neural-networks-artificial-neuron-or-node-Each-input-x.png)
 ![一般遺傳算法的生命週期 [Source]](https://paperswithcode.com/media/methods/gadiagram-300x196_jThbitI.png)
 
