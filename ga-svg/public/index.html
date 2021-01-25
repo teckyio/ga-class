@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GA SVG Builder</title>
+    <link rel="stylesheet" href="/build/main.css" />
+  </head>
+  <body>
+    <main>
+      <div class="target">
+        <h1>GA SVG Builder</h1>
+        <h2>Target</h2>
+        <label>url</label>
+        <input type="url" class="target" />
+        <br />
+        <label>file</label>
+        <input type="file" class="target" />
+        <br />
+        <label>Image Size</label>
+        <span class="target size"></span>
+        <br />
+        <img class="target" src="/res/Mona_Lisa.jpg" crossorigin="anonymous" />
+        <br />
+        <h2>Canvas Size</h2>
+        <label>width</label>
+        <input id="width" type="number" value="800" />
+        <br />
+        <label>height</label>
+        <input id="height" type="number" value="600" />
+        <br />
+        <button class="start">Start</button>
+      </div>
+      <div class="pool">
+        <canvas class="pool"></canvas>
+      </div>
+    </main>
+    <script type="module" src="/build/main.js"></script>
+  </body>
+</html>
