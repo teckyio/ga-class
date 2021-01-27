@@ -11,6 +11,27 @@ main {
   flex-direction: column;
 }
 
+.top.container {
+  display: flex;
+
+  h1 {
+    margin: 0.5em 0
+  }
+
+  .controls {
+    flex-grow: 1;
+    text-align: center;
+
+    button, label, span {
+      margin: 0.3em 0;
+    }
+
+    button.active {
+      outline: 2px solid salmon;
+    }
+  }
+}
+
 .canvas.container {
   flex-grow: 1;
   margin-bottom: 20px;

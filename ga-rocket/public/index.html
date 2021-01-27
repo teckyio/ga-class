@@ -8,7 +8,29 @@
   </head>
   <body>
     <main>
-      <h1>GA Rocket</h1>
+      <div class="top container">
+        <h1>GA Rocket</h1>
+        <div class="controls container">
+          <button class="seed">Seed</button>
+          <button class="evolve">Evolve</button>
+          <button class="pause">Pause</button>
+          <br />
+          <button class="initial">Set Initial</button>
+          <button class="target">Set Target</button>
+          <button class="barrier">Set Barrier</button>
+          <button class="eraser">Eraser</button>
+        </div>
+        <div class="parameters container">
+          <label>Survival Rate</label>
+          <input class="survive" />
+          <br />
+          <label>Mutation Rate</label>
+          <input class="mutate_rate" />
+          <br />
+          <label>Mutation Amount</label>
+          <input class="mutate_amount" />
+        </div>
+      </div>
       <div class="canvas container">
         <canvas id="world"></canvas>
       </div>

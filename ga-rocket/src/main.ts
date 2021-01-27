@@ -1,12 +1,104 @@
 console.log('ga-rocket.ts')
 
+let seedBtn = document.querySelector('.controls button.seed') as HTMLButtonElement
+let evolveBtn = document.querySelector('.controls button.evolve') as HTMLButtonElement
+let pauseBtn = document.querySelector('.controls button.pause') as HTMLButtonElement
+let initialBtn = document.querySelector('.controls button.initial') as HTMLButtonElement
+let targetBtn = document.querySelector('.controls button.target') as HTMLButtonElement
+let barrierBtn = document.querySelector('button.barrier') as HTMLButtonElement
+let eraserBtn = document.querySelector('button.eraser') as HTMLButtonElement
+let buttons = [seedBtn, evolveBtn, pauseBtn, initialBtn, targetBtn, barrierBtn, eraserBtn]
+
+let surviveInput = document.querySelector('.parameters input.survive') as HTMLButtonElement
+let mutateRateInput = document.querySelector('.parameters input.mutate_rate') as HTMLButtonElement
+let mutateAmountInput = document.querySelector('.parameters input.mutate_amount') as HTMLButtonElement
+
 let canvas = document.querySelector('canvas#world') as HTMLCanvasElement
 let ctx = canvas.getContext('2d')
+
+let started = false
+let penMode: 'initial' | 'target' | 'barrier' | 'eraser' | null = null
+let penDown = false
+
+buttons.forEach(button => button.addEventListener('click', () => setMode(button)))
+
+function setMode(button: HTMLButtonElement) {
+  buttons.forEach(button => button.classList.remove('active'))
+  button.classList.add('active')
+
+  penMode = null
+
+  switch (button) {
+    case seedBtn:
+      seed()
+      break
+    case evolveBtn:
+      started = true
+      requestAnimationFrame(loop)
+      break
+    case pauseBtn:
+      started = false
+      break
+    case initialBtn:
+      penMode = 'initial'
+      break
+    case targetBtn:
+      penMode = 'target'
+      break
+    case barrierBtn:
+      penMode = 'barrier'
+      break
+    case eraserBtn:
+      penMode = 'eraser'
+      break
+  }
+
+  evolveBtn.disabled = started
+  pauseBtn.disabled = !started
+}
+
+setMode(pauseBtn)
 
 window.addEventListener('resize', resize)
 resize()
 
+canvas.addEventListener('mousedown', () => penDown = true)
+canvas.addEventListener('mouseup', () => penDown = false)
+canvas.addEventListener('mousemove', (event) => {
+  if (penDown) {
+    clickCanvas(event)
+  }
+})
+canvas.addEventListener('click', clickCanvas)
+
+function clickCanvas(event: MouseEvent) {
+  if (!penMode) return
+  let rect = canvas.getBoundingClientRect()
+  let x = event.clientX - rect.left
+  let y = event.clientY - rect.top
+  let point = { x, y }
+  console.log('click', point)
+  switch (penMode) {
+    case 'initial':
+      userInitial = point
+      break
+    case 'target':
+      userGoal = point
+      break
+    case 'barrier':
+      barriers.push(point)
+      break
+    case 'eraser':
+      barriers = barriers.filter(barrier => !isCloseToBarrier(barrier, point))
+      break
+  }
+  paint()
+}
+
 function resize() {
+  console.log('resize')
+  canvas.removeAttribute('width')
+  canvas.removeAttribute('height')
   canvas.width = canvas.clientWidth
   canvas.height = canvas.clientHeight
 }
@@ -17,10 +109,11 @@ function paintBackground() {
 }
 
 class RocketGA {
-  static Tick_Step = 10
-  static Survive_Rate = 0.99
-  static Mutation_Rate = 0.1
-  static Mutation_Amount = 0.05
+  static Tick_Step = 10000
+  static Survive_Rate = 0.8
+  static Mutation_Rate = 0.3
+  static Mutation_Amount = 0.005
+
 
   population: Rocket[]
 
@@ -39,8 +132,9 @@ class RocketGA {
       this.population.forEach(rocket => {
         let distanceToGoal = calcDistanceSquare(goalPoint, rocket.position)
         let distanceFromStart = calcDistanceSquare(initialPoint, rocket.position)
-        rocket.fitness = 1 / (distanceToGoal + 1) * distanceFromStart
         // rocket.fitness = 1 / (distanceToGoal + 1)
+        rocket.fitness = 1 / (distanceToGoal + 1) * distanceFromStart
+        // rocket.fitness = distanceFromStart
       })
       done()
     })
@@ -128,8 +222,11 @@ class RocketGA {
   paint() {
     paintBackground()
     paintGoal()
-    this.population.forEach(rocket => rocket.paintTrack())
-    this.population.forEach(rocket => rocket.paintBody())
+    paintBarriers()
+    if (this.population) {
+      this.population.forEach(rocket => rocket.paintTrack())
+      this.population.forEach(rocket => rocket.paintBody())
+    }
   }
 }
 
@@ -178,7 +275,7 @@ class Color {
   }
 
   static toHex(int: number) {
-    return (int < 16 ? '0' : '') + int.toString(16)
+    return (int < 16 ? '0' : '') + (int << 0).toString(16)
   }
 
   toHex() {
@@ -238,7 +335,7 @@ class Move {
 class RocketGene {
   color: Color
   moves: Move[]
-  static N_Move = 500
+  static N_Move = 1000
 
   static random() {
     let gene = new RocketGene()
@@ -267,17 +364,44 @@ class RocketGene {
   }
 }
 
+let userInitial: Point
+
 function initialPosition(): Point {
+  if (userInitial) {
+    return userInitial
+  }
   return {
     x: canvas.width / 2,
     y: canvas.height - Rocket.Body_Size * 2,
   }
 }
 
+const Barrier_Size = 10
+const Barrier_Color = 'red'
+let barriers: Point[] = []
+
+function isCloseToAnyBarrier(point: Point) {
+  return barriers.some(barrier => calcDistanceSquare(barrier, point) < Barrier_Size ** 2)
+}
+
+function isCloseToBarrier(barrier: Point, point: Point) {
+  return calcDistanceSquare(barrier, point) < Barrier_Size ** 2
+}
+
+function paintBarriers() {
+  ctx.lineWidth = Barrier_Size / 4
+  ctx.strokeStyle = Barrier_Color
+  barriers.forEach(barrier => paintRect(barrier, Barrier_Size))
+}
+
 const Goal_Size = 20
 const Goal_Color = 'cyan'
+let userGoal: Point
 
 function goalPosition(): Point {
+  if (userGoal) {
+    return userGoal
+  }
   if (!'top') {
     return {
       x: canvas.width / 2,
@@ -302,7 +426,7 @@ function goalPosition(): Point {
       y: canvas.height / 2,
     }
   }
-  if ('lower-right') {
+  if (!'lower-right') {
     return {
       x: canvas.width * 3 / 4,
       y: canvas.height * 3 / 5,
@@ -318,7 +442,7 @@ function paintGoal() {
 
 class Rocket {
   static Body_Size = 10
-  static Track_Size = 3
+  static Track_Size = 2
 
   static random() {
     let rocket = new Rocket()
@@ -331,6 +455,7 @@ class Rocket {
   track: Point[]
   fitness: number
   survive: boolean
+  hitWall: boolean
 
   init(position: Point) {
     this.position = {
@@ -338,9 +463,11 @@ class Rocket {
       y: position.y,
     }
     this.track = [position]
+    this.hitWall = false
   }
 
   move(time: number) {
+    if (this.hitWall) return
     let index = time % this.gene.moves.length
     let move = this.gene.moves[index]
     this.position.x += move.x
@@ -349,6 +476,9 @@ class Rocket {
       x: this.position.x,
       y: this.position.y,
     })
+    if (isCloseToAnyBarrier(this.position)) {
+      this.hitWall = true
+    }
   }
 
   paintTrack() {
@@ -377,14 +507,14 @@ function calcDistanceSquare(a: Point, b: Point) {
   return x * x + y * y
 }
 
-let Population_Size = 50
-let Max_Generation = 100
+let Population_Size = 100
+let Max_Generation = 10000
 
 let ga = new RocketGA()
-ga.seed(Population_Size)
-let generation = 0
+let generation: number
 
 function loop() {
+  if (!started) return
   if (generation >= Max_Generation) {
     return
   }
@@ -402,5 +532,21 @@ function loop() {
   })
 }
 
-loop()
+function seed() {
+  generation = 0
+  ga.seed(Population_Size)
+}
 
+function paint() {
+  ga.paint()
+}
+
+paint()
+
+function formatRate(rate: number) {
+  return Math.round(rate * 100 * 100) / 100 + '%'
+}
+
+surviveInput.value = formatRate(RocketGA.Survive_Rate)
+mutateRateInput.value = formatRate(RocketGA.Mutation_Rate)
+mutateAmountInput.value = formatRate(RocketGA.Mutation_Amount)
