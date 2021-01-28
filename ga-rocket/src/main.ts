@@ -137,13 +137,14 @@ class RocketGA {
   }
 
   evaluate(done: VoidFunction) {
+    // TODO evaluate
     let initialPoint = initialPosition()
     this.population.forEach(rocket => rocket.init(initialPoint))
     this.tick(0, () => {
       let goal = goalPosition()
       this.population.forEach(rocket => {
-        let distanceSquare = calcDistanceSquare(goal, rocket.position)
-        rocket.fitness = 1 / (distanceSquare + 1)
+        // TODO set fitness
+        rocket.fitness = 1
       })
       done()
     })
@@ -165,41 +166,11 @@ class RocketGA {
 
 
   select() {
-    /**
-     * gene 1: fitness 1, weight: 1/6
-     * gene 2: fitness 2, weight: 1/3
-     * gene 3: fitness 3, weight: 1/2
-     *
-     * total: 6
-     *
-     * */
-
-    let expectedNumberOfSurvival = this.population.length * RocketGA.Survive_Rate
-
-    let totalFitness = 0
-    this.population.forEach(rocket => totalFitness += rocket.fitness)
-    this.population.forEach(rocket => {
-      let weight = rocket.fitness / totalFitness
-      rocket.survive = randomBool(weight * expectedNumberOfSurvival)
-    })
-
-    // safe catch, there should be at least two individuals survive
-    this.population[0].survive = true
-    this.population[1].survive = true
+    // TODO select
   }
 
   crossover() {
-    this.population.forEach((rocket, childIdx) => {
-      if (rocket.survive) return
-
-      let parent1Idx = this.pickParentIdx(childIdx)
-      let parent2Idx = this.pickParentIdx(childIdx)
-
-      rocket.gene.crossover(
-        this.population[parent1Idx].gene,
-        this.population[parent2Idx].gene,
-      )
-    })
+    // TODO crossover population
   }
 
   pickParentIdx(childIdx: number) {
@@ -212,11 +183,7 @@ class RocketGA {
   }
 
   mutate() {
-    this.population.forEach(rocket => {
-      if (randomBool(RocketGA.Mutation_Rate)) {
-        rocket.gene.mutate(RocketGA.Mutation_Rate, RocketGA.Mutation_Amount)
-      }
-    })
+    // TODO mutate population
   }
 
   paint() {
@@ -286,15 +253,11 @@ class Color {
   }
 
   crossover(a: Color, b: Color) {
-    this.r = crossoverNumber(a.r, b.r)
-    this.g = crossoverNumber(a.g, b.g)
-    this.b = crossoverNumber(a.b, b.b)
+    // TODO crossover color
   }
 
   mutate(mutationAmount: number) {
-    this.r = minmax(0, this.r + (Math.random() * 2 - 1) * 256 * mutationAmount, 255)
-    this.g = minmax(0, this.g + (Math.random() * 2 - 1) * 256 * mutationAmount, 255)
-    this.b = minmax(0, this.b + (Math.random() * 2 - 1) * 256 * mutationAmount, 255)
+    // TODO mutate color
   }
 }
 
@@ -322,13 +285,11 @@ class Move {
   }
 
   crossover(a: Move, b: Move) {
-    this.x = crossoverNumber(a.x, b.x)
-    this.y = crossoverNumber(a.y, b.y)
+    // TODO crossover move
   }
 
   mutate(amount: number) {
-    this.x = minmax(-10, this.x + Move.randomVal() * amount, 10)
-    this.y = minmax(-10, this.y + Move.randomVal() * amount, 10)
+    // TODO mutate move
   }
 }
 
@@ -357,19 +318,11 @@ class RocketGene {
   }
 
   crossover(a: RocketGene, b: RocketGene) {
-    this.color.crossover(a.color, b.color)
-    for (let i = 0; i < RocketGene.N_Move; i++) {
-      this.moves[i].crossover(a.moves[i], b.moves[i])
-    }
+    // TODO crossover gene
   }
 
   mutate(prob, amount) {
-    this.color.mutate(amount)
-    this.moves.forEach(move => {
-      if (randomBool(prob)) {
-        move.mutate(amount)
-      }
-    })
+    // TODO mutate gene
   }
 }
 
