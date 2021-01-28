@@ -9,9 +9,14 @@ let barrierBtn = document.querySelector('button.barrier') as HTMLButtonElement
 let eraserBtn = document.querySelector('button.eraser') as HTMLButtonElement
 let buttons = [seedBtn, evolveBtn, pauseBtn, initialBtn, targetBtn, barrierBtn, eraserBtn]
 
-let surviveInput = document.querySelector('.parameters input.survive') as HTMLButtonElement
-let mutateRateInput = document.querySelector('.parameters input.mutate_rate') as HTMLButtonElement
-let mutateAmountInput = document.querySelector('.parameters input.mutate_amount') as HTMLButtonElement
+
+let populationInput = document.querySelector('.parameters input.population') as HTMLInputElement
+let movesInput = document.querySelector('.parameters input.moves') as HTMLInputElement
+let stepsInput = document.querySelector('.parameters input.steps') as HTMLInputElement
+
+let surviveInput = document.querySelector('.parameters input.survive') as HTMLInputElement
+let mutateRateInput = document.querySelector('.parameters input.mutate_rate') as HTMLInputElement
+let mutateAmountInput = document.querySelector('.parameters input.mutate_amount') as HTMLInputElement
 
 let canvas = document.querySelector('canvas#world') as HTMLCanvasElement
 let ctx = canvas.getContext('2d')
@@ -109,18 +114,25 @@ function paintBackground() {
 }
 
 class RocketGA {
+  static Population_Size = 20
   static Tick_Step = 10000
-  static Survive_Rate = 0.8
-  static Mutation_Rate = 0.3
-  static Mutation_Amount = 0.005
+  static Survive_Rate = 0.99
+  static Mutation_Rate = 0.1
+  static Mutation_Amount = 0.1
 
 
   population: Rocket[]
 
-  seed(n: number) {
+  seed() {
     this.population = []
+    this.addSeed(RocketGA.Population_Size)
+  }
+
+  addSeed(n: number) {
     for (let i = 0; i < n; i++) {
-      this.population.push(Rocket.random())
+      for (let i = 0; i < n; i++) {
+        this.population.push(Rocket.random())
+      }
     }
   }
 
@@ -128,13 +140,10 @@ class RocketGA {
     let initialPoint = initialPosition()
     this.population.forEach(rocket => rocket.init(initialPoint))
     this.tick(0, () => {
-      let goalPoint = goalPosition()
+      let goal = goalPosition()
       this.population.forEach(rocket => {
-        let distanceToGoal = calcDistanceSquare(goalPoint, rocket.position)
-        let distanceFromStart = calcDistanceSquare(initialPoint, rocket.position)
-        // rocket.fitness = 1 / (distanceToGoal + 1)
-        rocket.fitness = 1 / (distanceToGoal + 1) * distanceFromStart
-        // rocket.fitness = distanceFromStart
+        let distanceSquare = calcDistanceSquare(goal, rocket.position)
+        rocket.fitness = 1 / (distanceSquare + 1)
       })
       done()
     })
@@ -154,50 +163,42 @@ class RocketGA {
     }
   }
 
-  selectBySort() {
-    this.population.sort((a, b) => a.fitness - b.fitness)
 
-    let numDie = this.population.length * (1 - RocketGA.Survive_Rate)
-    for (let i = 0; i < this.population.length; i++) {
-      this.population[i].survive = i <= numDie
-    }
+  select() {
+    /**
+     * gene 1: fitness 1, weight: 1/6
+     * gene 2: fitness 2, weight: 1/3
+     * gene 3: fitness 3, weight: 1/2
+     *
+     * total: 6
+     *
+     * */
 
-    // at least two individual survive
-    this.population[this.population.length - 1].survive = true
-    this.population[this.population.length - 2].survive = true
-  }
+    let expectedNumberOfSurvival = this.population.length * RocketGA.Survive_Rate
 
-  selectByChance() {
     let totalFitness = 0
     this.population.forEach(rocket => totalFitness += rocket.fitness)
-    let numSurvival = this.population.length * RocketGA.Survive_Rate
     this.population.forEach(rocket => {
       let weight = rocket.fitness / totalFitness
-      rocket.survive = randomBool(weight * numSurvival)
+      rocket.survive = randomBool(weight * expectedNumberOfSurvival)
     })
 
-    // at least two individual survive
+    // safe catch, there should be at least two individuals survive
     this.population[0].survive = true
     this.population[1].survive = true
   }
 
-  select() {
-    this.selectByChance()
-  }
-
   crossover() {
-    this.population.forEach((child, idx) => {
-      if (child.survive) return
+    this.population.forEach((rocket, childIdx) => {
+      if (rocket.survive) return
 
-      let parent1Idx = this.pickParentIdx(idx)
-      let parent2Idx = this.pickParentIdx(idx)
+      let parent1Idx = this.pickParentIdx(childIdx)
+      let parent2Idx = this.pickParentIdx(childIdx)
 
-      // console.log(idx, '<-', parent1Idx, parent2Idx)
-
-      let parent1 = this.population[parent1Idx]
-      let parent2 = this.population[parent2Idx]
-
-      child.gene.crossover(parent1.gene, parent2.gene)
+      rocket.gene.crossover(
+        this.population[parent1Idx].gene,
+        this.population[parent2Idx].gene,
+      )
     })
   }
 
@@ -212,10 +213,9 @@ class RocketGA {
 
   mutate() {
     this.population.forEach(rocket => {
-      if (!randomBool(RocketGA.Mutation_Rate)) {
-        return
+      if (randomBool(RocketGA.Mutation_Rate)) {
+        rocket.gene.mutate(RocketGA.Mutation_Rate, RocketGA.Mutation_Amount)
       }
-      rocket.gene.mutate(RocketGA.Mutation_Rate, RocketGA.Mutation_Amount)
     })
   }
 
@@ -242,7 +242,7 @@ function randomInt(n: number) {
 /**
  * @param prob 0..1
  * */
-function randomBool(prob: number) {
+function randomBool(prob: number): boolean {
   return Math.random() < prob
 }
 
@@ -292,9 +292,9 @@ class Color {
   }
 
   mutate(mutationAmount: number) {
-    this.r = minmax(0, this.r + (Math.random() - 0.5) * 256 * mutationAmount, 255)
-    this.g = minmax(0, this.g + (Math.random() - 0.5) * 256 * mutationAmount, 255)
-    this.b = minmax(0, this.b + (Math.random() - 0.5) * 256 * mutationAmount, 255)
+    this.r = minmax(0, this.r + (Math.random() * 2 - 1) * 256 * mutationAmount, 255)
+    this.g = minmax(0, this.g + (Math.random() * 2 - 1) * 256 * mutationAmount, 255)
+    this.b = minmax(0, this.b + (Math.random() * 2 - 1) * 256 * mutationAmount, 255)
   }
 }
 
@@ -327,15 +327,15 @@ class Move {
   }
 
   mutate(amount: number) {
-    this.x = minmax(-1, this.x + Move.randomVal() * amount, 1)
-    this.y = minmax(-1, this.y + Move.randomVal() * amount, 1)
+    this.x = minmax(-10, this.x + Move.randomVal() * amount, 10)
+    this.y = minmax(-10, this.y + Move.randomVal() * amount, 10)
   }
 }
 
 class RocketGene {
   color: Color
   moves: Move[]
-  static N_Move = 1000
+  static N_Move = 500
 
   static random() {
     let gene = new RocketGene()
@@ -345,6 +345,15 @@ class RocketGene {
       gene.moves.push(Move.random())
     }
     return gene
+  }
+
+  resize() {
+    while (RocketGene.N_Move > this.moves.length) {
+      this.moves.push(Move.random())
+    }
+    while (RocketGene.N_Move < this.moves.length) {
+      this.moves.pop()
+    }
   }
 
   crossover(a: RocketGene, b: RocketGene) {
@@ -507,8 +516,7 @@ function calcDistanceSquare(a: Point, b: Point) {
   return x * x + y * y
 }
 
-let Population_Size = 100
-let Max_Generation = 10000
+let Max_Generation = 100000000
 
 let ga = new RocketGA()
 let generation: number
@@ -534,7 +542,7 @@ function loop() {
 
 function seed() {
   generation = 0
-  ga.seed(Population_Size)
+  ga.seed()
 }
 
 function paint() {
@@ -547,6 +555,85 @@ function formatRate(rate: number) {
   return Math.round(rate * 100 * 100) / 100 + '%'
 }
 
-surviveInput.value = formatRate(RocketGA.Survive_Rate)
-mutateRateInput.value = formatRate(RocketGA.Mutation_Rate)
-mutateAmountInput.value = formatRate(RocketGA.Mutation_Amount)
+function formatNumber(value: number) {
+  return value + ''
+}
+
+function toNumber(input: HTMLInputElement) {
+  let value = input.value
+  if (value.includes('%')) {
+    return +value.replace('%', '') / 100
+  }
+  return +value
+}
+
+function bindInput<T extends object>(props: {
+  input: HTMLInputElement,
+  object: T
+  key: keyof T
+  onChange?: (value: number) => void
+  format?: (value: number) => string
+}) {
+  let format = props.format || formatNumber
+  props.input.value = format(props.object[props.key] as any)
+  props.input.addEventListener('change', () => {
+    let value = toNumber(props.input)
+    props.object[props.key] = value as any
+    props.onChange?.(value)
+  })
+}
+
+function bindInputs() {
+
+  bindInput({
+    input: populationInput,
+    object: RocketGA,
+    key: 'Population_Size',
+    onChange(Population_Size) {
+      if (Population_Size > ga.population.length) {
+        ga.addSeed(Population_Size - ga.population.length)
+        return
+      }
+      if (Population_Size < ga.population.length) {
+        ga.population.splice(0, ga.population.length - Population_Size)
+        return
+      }
+    },
+  })
+
+  bindInput({
+    input: movesInput,
+    object: RocketGene,
+    key: 'N_Move',
+    onChange: () => ga.population?.forEach(rocket => rocket.gene.resize()),
+  })
+
+  bindInput({
+    input: stepsInput,
+    object: RocketGA,
+    key: 'Tick_Step',
+  })
+
+  bindInput({
+    input: surviveInput,
+    object: RocketGA,
+    key: 'Survive_Rate',
+    format: formatRate,
+  })
+
+  bindInput({
+    input: mutateRateInput,
+    object: RocketGA,
+    key: 'Mutation_Rate',
+    format: formatRate,
+  })
+
+  bindInput({
+    input: mutateAmountInput,
+    object: RocketGA,
+    key: 'Mutation_Amount',
+    format: formatRate,
+  })
+}
+
+bindInputs()
