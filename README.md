@@ -1,5 +1,7 @@
 # Genetic Algorithm (GA) — Tecky Open Class
 
+Presentation Slides: https://paper.dropbox.com/doc/present/R1Tx0G8JWpFP8H5WO4C9H
+
 ## About Me
 ****
 **Beeno Tung**
@@ -8,6 +10,7 @@ Technical Instructor / Fullstack Developer / Technical Consultant
 Working in [Tecky Academy](https://tecky.io/)
 
 FB/Twitter: @beenotung
+
 ZeroMe/ZeroMail: beenotung@zeroid.bit
 
 ## 遺傳算法的背景
