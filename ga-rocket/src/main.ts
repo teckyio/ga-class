@@ -130,9 +130,7 @@ class RocketGA {
 
   addSeed(n: number) {
     for (let i = 0; i < n; i++) {
-      for (let i = 0; i < n; i++) {
-        this.population.push(Rocket.random())
-      }
+      this.population.push(Rocket.random())
     }
   }
 
