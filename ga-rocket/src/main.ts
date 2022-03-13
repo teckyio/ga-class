@@ -335,7 +335,7 @@ class Move {
 class RocketGene {
   color: Color
   moves: Move[]
-  static N_Move = 300
+  static N_Move = 100
 
   static random() {
     let gene = new RocketGene()
