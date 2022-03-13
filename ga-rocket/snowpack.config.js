@@ -9,7 +9,7 @@ module.exports = {
     public: '/',
   },
   plugins: [
-    'snowpack-plugin-sass',
+    '@snowpack/plugin-sass',
   ],
   // installOptions: {},
   // devOptions: {},
